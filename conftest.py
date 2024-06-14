@@ -1,30 +1,14 @@
 import pytest
-from api import UserApi, UserSession
+from api import UserApi
 import allure
 
+@allure.step("Создать пользователя для теста с последующим удалением")
+@pytest.fixture(scope='function')
+def new_user(auth_required=True):
+    user_body = UserApi.generate_user_data()
+    user_response = UserApi.register_user(user_body)
+    access_token = UserApi.get_access_token(user_response)
+    yield user_response, access_token
+    UserApi.delete_user(access_token)
 
-@pytest.fixture(scope="function")
-@allure.title('Фикстура для создания нового пользователя')
-def new_user_creation(auth_required=True):
-    #Создаем нового пользователя и получаем его данные
-    user_data = UserApi.register_new_user_and_return_email_password()
-    email = user_data.get('email')
-    password = user_data.get('password')
 
-    #Проверяем, что данные пользователя были успешно созданы
-    assert email and password, "Не удалось создать пользователя"
-
-    access_token = None
-    if auth_required:
-        user_session = UserSession()
-        #Авторизуем пользователя и получаем accessToken
-        user_session = UserApi.login_user(user_session, email, password)
-        assert user_session.accessToken, "Не удалось авторизовать пользователя"
-        access_token = user_session.accessToken
-
-    #Предоставляем данные пользователя и accessToken для теста
-    yield user_data, access_token
-
-    #После завершения теста удаляем пользователя
-    delete_response = UserApi.delete_user(user_session)
-    assert delete_response['success'], "Не удалось удалить пользователя"

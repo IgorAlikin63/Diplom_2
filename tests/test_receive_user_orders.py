@@ -1,7 +1,6 @@
-import requests
 from api import UserApi
-import urls
 import allure
+
 
 class TestReceiveUserOrders:
 
@@ -13,7 +12,7 @@ class TestReceiveUserOrders:
         headers = {
             "Authorization": access_token
         }
-        response = requests.get(urls.BASE_URL + urls.ORDERS_USER, headers=headers)
+        response = UserApi.get_users_orders(headers)
         assert response.status_code == 200
         assert 'orders' in response.json()
         assert len(response.json()['orders']) <= 50  # Проверяем, что заказов не больше 50
@@ -22,6 +21,6 @@ class TestReceiveUserOrders:
     @allure.description(
         "Тест проверяет, что неавторизованный пользователь не может получить список заказов и получает ошибку")
     def test_unauthorized_user_cannot_get_orders(self):
-        response = requests.get(urls.BASE_URL + urls.ORDERS_USER)
+        response = UserApi.get_users_orders(None)
         assert response.status_code == 401
         assert response.json()['message'] == "You should be authorised"
